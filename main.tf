@@ -33,7 +33,7 @@ resource "aws_security_group" "jenkins-sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["54.175.102.108/32"]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
@@ -51,17 +51,32 @@ resource "aws_security_group" "jenkins-sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
-#Resource to create a SSH private key
-resource "tls_private_key" "jenkins_key" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
+
+variable "key_name" {
+  type    = string
+  default = "my_jenkins_key"
+}
+
+variable "public_key" {
+  type    = string
+  default = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC9NCLFhVhLKq1MlCBHvsf+Ch9cn8vKkgjQdgzNZMnGCURnKnbuVLWJUqQhi1OEufXS6AjBFNs6QvczuNm/mJDGZbUAYtiZxS6C6oxFIOPxA8RgDDSf8qaLQDjvgFlWe5aRSld1Yr812klRJN/464SyBURZvDfUD8/nEF7G1/268nHJRyvv2/Pok71bduK6cYEHo8HguYsMhhdMnCwL6Gk/Vmbh0fkBx5Cd+8SeDg7eI1lZDrjwq83p4UuIJ02e0f5ew4eC5itwVh/DfnXDMk0Q8edNWS6h6PfJTQFL85+W9vUGlOBEXlYaiQPP0MRA/T7t4umIHbsS0UwhEqtJQDRPBVXK7DviKBNkjWqb2ursPMloGICjqyDDHVA+cNYFeFZqiO28/bY0+s40MHrl1oBvKwLREpAlVj3FoToTpoKNTZbJ9OPPRBhlSL3vQF8y0ELwzX7ZHQ2aIBGH628GYct85vNVeGt5U3SpA2/zeJI8R3NBu7JQNbSUs2oUyMJl1yQZZmD3bmY1z70uO1LGHLNxQWtFmvbR0LCK5qzeZ7lNqYpqTUUyYln/+Xf1WF+dfiayCfaWy0f8cJBkyFvX+hUj2as3kQF+wx4Ds+r/9UvxhXM4ISooJ0fk8xUzq0FgB5rAwO4dFceXVzwNs+GoakhE77EgQ5KnbZUYwOijGLwnSw== ec2-user@ip-172-31-50-89.ec2.internal"
 }
 
 resource "aws_key_pair" "ssh_key" {
-  key_name   = "jenkins_ssh"
-  public_key = tls_private_key.jenkins_key.public_key_openssh
+  key_name   = var.key_name
+  public_key = var.public_key
 }
 
+data "aws_ami" "amazon_linux_2" {
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-2.0.*-x86_64-gp2"]
+  }
+
+  owners = ["amazon"]
+}
 
 resource "aws_iam_policy" "jenkins_policy" {
   name        = "jenkins_policy"
@@ -113,10 +128,10 @@ resource "aws_iam_role_policy_attachment" "jenkins-role-policy-attach" {
 }
 
 resource "aws_instance" "jenkins-server" {
-  ami                  = "ami-0f9ce67dcf718d332"
+  ami                  = data.aws_ami.amazon_linux_2.id
   instance_type        = "t2.micro"
   security_groups      = ["jenkins-security-group"]
-  key_name             = "jenkins_ssh"
+  key_name             = aws_key_pair.ssh_key.key_name
   iam_instance_profile = "jenkins_profile" # Use the IAM instance profile name here
   user_data            = <<EOF
  #!/bin/bash
