@@ -17,7 +17,7 @@ variable "aws_region" {
 }
 
 resource "aws_s3_bucket" "my-bucket" {
-  bucket = "thomas-week-20-luit-blue-bucket-2023-2"
+  bucket = "thomas-week-20-luit-blue-bucket-2023"
 
   tags = {
     Name = "Week 20 bucket"
@@ -80,7 +80,7 @@ resource "aws_iam_policy" "jenkins_policy" {
       {
         "Action" : "s3:*",
         "Effect" : "Allow",
-        "Resource" : ["arn:aws:s3:::thomas-week-20-luit-blue-bucket-2023-2", "arn:aws:s3:::thomas-week-20-luit-blue-bucket-2023-2/*"]
+        "Resource" : ["arn:aws:s3:::thomas-week-20-luit-blue-bucket-2023", "arn:aws:s3:::thomas-week-20-luit-blue-bucket-2023/*"]
       }
     ]
   })
