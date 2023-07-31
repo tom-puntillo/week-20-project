@@ -8,7 +8,8 @@ terraform {
 }
 
 provider "aws" {
-  # Configuration options
+  # Configuration options for the AWS provider can be added here
+  # For example, specifying credentials, region, etc.
 }
 
 variable "aws_region" {
@@ -17,6 +18,7 @@ variable "aws_region" {
 }
 
 resource "aws_s3_bucket" "my-bucket" {
+  # Create an AWS S3 bucket with the specified name
   bucket = "thomas-week-20-luit-blue-bucket-2023"
 
   tags = {
@@ -25,6 +27,7 @@ resource "aws_s3_bucket" "my-bucket" {
 }
 
 resource "aws_security_group" "jenkins-sg" {
+  # Create an AWS security group to control inbound and outbound traffic
   name        = "jenkins-security-group"
   description = "Allow inbound traffic to Jenkins server"
 
@@ -63,11 +66,13 @@ variable "public_key" {
 }
 
 resource "aws_key_pair" "ssh_key" {
+  # Create an AWS key pair for Jenkins server
   key_name   = var.key_name
   public_key = var.public_key
 }
 
 data "aws_ami" "amazon_linux_2" {
+  # Data source to fetch the most recent Amazon Linux 2 AMI ID
   most_recent = true
 
   filter {
@@ -79,9 +84,10 @@ data "aws_ami" "amazon_linux_2" {
 }
 
 resource "aws_iam_policy" "jenkins_policy" {
+  # Create an IAM policy that allows certain actions on S3 buckets
   name        = "jenkins_policy"
   path        = "/"
-  description = "My jenkins policy"
+  description = "My Jenkins policy"
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -102,6 +108,7 @@ resource "aws_iam_policy" "jenkins_policy" {
 }
 
 resource "aws_iam_role" "jenkins_role" {
+  # Create an IAM role for Jenkins server
   name = "jenkins_role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -118,16 +125,19 @@ resource "aws_iam_role" "jenkins_role" {
 }
 
 resource "aws_iam_instance_profile" "jenkins_profile" {
+  # Create an IAM instance profile for Jenkins server and associate it with the Jenkins role
   name = "jenkins_profile"
   role = "jenkins_role"
 }
 
 resource "aws_iam_role_policy_attachment" "jenkins-role-policy-attach" {
+  # Attach the IAM policy to the Jenkins role
   role       = aws_iam_role.jenkins_role.name
   policy_arn = aws_iam_policy.jenkins_policy.arn
 }
 
 resource "aws_instance" "jenkins-server" {
+  # Launch an EC2 instance for Jenkins server
   ami                  = data.aws_ami.amazon_linux_2.id
   instance_type        = "t2.micro"
   security_groups      = ["jenkins-security-group"]
